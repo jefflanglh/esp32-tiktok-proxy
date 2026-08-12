@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import requests
+import cloudscraper
 
 app = Flask(__name__)
 
@@ -10,13 +10,17 @@ def get_user_info():
         return jsonify({"error": "Missing sec_user_id"}), 400
         
     target_url = f"https://countik.com/api/userinfo?sec_user_id={sec_user_id}"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Referer": "https://countik.com/"
-    }
     
     try:
-        res = requests.get(target_url, headers=headers, timeout=8)
+        # 创建可绕过 Cloudflare 盾的 scraper 实例
+        scraper = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'desktop': True
+            }
+        )
+        res = scraper.get(target_url, timeout=10)
         return (res.text, res.status_code, {'Content-Type': 'application/json'})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
