@@ -1,2 +1,2 @@
 flask
-cloudscraper
+curl_cffi
