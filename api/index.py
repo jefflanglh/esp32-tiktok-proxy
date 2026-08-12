@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import cloudscraper
+from curl_cffi import requests
 
 app = Flask(__name__)
 
@@ -12,15 +12,17 @@ def get_user_info():
     target_url = f"https://countik.com/api/userinfo?sec_user_id={sec_user_id}"
     
     try:
-        # 创建可绕过 Cloudflare 盾的 scraper 实例
-        scraper = cloudscraper.create_scraper(
-            browser={
-                'browser': 'chrome',
-                'platform': 'windows',
-                'desktop': True
-            }
+        # impersonate="chrome120" 会伪造真实 Chrome 的 TLS 握手特征与 Header 结构
+        res = requests.get(
+            target_url,
+            impersonate="chrome120",
+            headers={
+                "Referer": "https://countik.com/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9"
+            },
+            timeout=10
         )
-        res = scraper.get(target_url, timeout=10)
         return (res.text, res.status_code, {'Content-Type': 'application/json'})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
